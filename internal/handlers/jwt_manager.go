@@ -35,9 +35,9 @@ func (m *JWTManager) Generate(user *entity.User) (string, error) {
 	return token.SignedString([]byte(m.secret))
 }
 
-func (m *JWTManager) Parse(acceessToken string) (*UseClaims, error) {
+func (m *JWTManager) Parse(accessToken string) (*UseClaims, error) {
 	token, err := jwt.ParseWithClaims(
-		acceessToken,
+		accessToken,
 		&UseClaims{},
 		func(token *jwt.Token) (interface{}, error) {
 			_, ok := token.Method.(*jwt.SigningMethodHMAC)
