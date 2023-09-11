@@ -6,9 +6,10 @@ import (
 )
 
 type UserSession struct {
-	Id        uuid.UUID
-	UserdId   uint32
-	ExpiresAt time.Time
-	UpdateAt  time.Time
-	CreatedAt time.Time
+	Id           uuid.UUID
+	UserdId      uint32
+	RefreshToken string
+	ExpiresAt    time.Time
+	UpdateAt     time.Time
+	CreatedAt    time.Time
 }
