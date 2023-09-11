@@ -50,3 +50,11 @@ func (uc UserSessionUseCase) Refresh(ctx context.Context, sessionId uuid.UUID, u
 
 	return e, nil
 }
+func (uc UserSessionUseCase) Get(ctx context.Context, userId uint32) (*entity.UserSession, error) {
+	session, err := uc.repo.Get(ctx, userId)
+	if err != nil {
+		return nil, fmt.Errorf("UserSessionCase - Get: %w", err)
+	}
+
+	return session, nil
+}
