@@ -2,11 +2,12 @@ package entity
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
-	Id             uint32
+	Id             uuid.UUID
 	Email          string
 	HashedPassword string
 }
@@ -18,6 +19,7 @@ func NewUser(email, password string) (*User, error) {
 	}
 
 	user := &User{
+		Id:             uuid.New(),
 		Email:          email,
 		HashedPassword: string(hashedPassword),
 	}

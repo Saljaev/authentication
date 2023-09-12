@@ -7,7 +7,7 @@ import (
 
 type UserSession struct {
 	Id           uuid.UUID
-	UserdId      uint32
+	UserdId      uuid.UUID
 	RefreshToken string
 	ExpiresAt    time.Time
 	UpdateAt     time.Time
