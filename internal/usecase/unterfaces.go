@@ -19,8 +19,8 @@ type (
 	}
 
 	UserSessions interface {
-		Add(ctx context.Context, userId uint32) (*entity.UserSession, error)
-		Refresh(ctx context.Context, sessionId uuid.UUID, userId uint32) (*entity.UserSession, error)
+		Add(ctx context.Context, userId uint32, refreshToken string) (*entity.UserSession, error)
+		Refresh(ctx context.Context, sessionId uuid.UUID, userId uint32, refreshToken string) (*entity.UserSession, error)
 		Get(ctx context.Context, userId uint32) (*entity.UserSession, error)
 	}
 

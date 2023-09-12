@@ -20,14 +20,15 @@ func NewUserSessionsUseCase(repo UserSessionRepo, refreshTokenLength uint32, ses
 
 var _ UserSessions = (*UserSessionUseCase)(nil)
 
-func (uc UserSessionUseCase) Add(ctx context.Context, userId uint32) (*entity.UserSession, error) {
+func (uc UserSessionUseCase) Add(ctx context.Context, userId uint32, refreshToken string) (*entity.UserSession, error) {
 	now := time.Now()
 
 	e, err := uc.repo.Create(ctx, entity.UserSession{
-		UserdId:   userId,
-		ExpiresAt: now.Add(uc.sessionDuration),
-		UpdateAt:  now,
-		CreatedAt: now,
+		UserdId:      userId,
+		ExpiresAt:    now.Add(uc.sessionDuration),
+		UpdateAt:     now,
+		CreatedAt:    now,
+		RefreshToken: refreshToken,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("UserSessionCase - Add: %w", err)
@@ -36,13 +37,14 @@ func (uc UserSessionUseCase) Add(ctx context.Context, userId uint32) (*entity.Us
 	return e, nil
 }
 
-func (uc UserSessionUseCase) Refresh(ctx context.Context, sessionId uuid.UUID, userId uint32) (*entity.UserSession, error) {
+func (uc UserSessionUseCase) Refresh(ctx context.Context, sessionId uuid.UUID, userId uint32, refreshToken string) (*entity.UserSession, error) {
 	now := time.Now()
 
 	e, err := uc.repo.Update(ctx, sessionId, entity.UserSession{
-		UserdId:   userId,
-		ExpiresAt: now.Add(uc.sessionDuration),
-		UpdateAt:  now,
+		UserdId:      userId,
+		ExpiresAt:    now.Add(uc.sessionDuration),
+		UpdateAt:     now,
+		RefreshToken: refreshToken,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("UserSessionCase - Refresh: %w", err)
