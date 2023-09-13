@@ -10,11 +10,11 @@ import (
 
 type UserSessionUseCase struct {
 	repo               UserSessionRepo
-	refreshTokenLength uint32
+	refreshTokenLength int
 	sessionDuration    time.Duration
 }
 
-func NewUserSessionsUseCase(repo UserSessionRepo, refreshTokenLength uint32, sessionDuration time.Duration) *UserSessionUseCase {
+func NewUserSessionsUseCase(repo UserSessionRepo, refreshTokenLength int, sessionDuration time.Duration) *UserSessionUseCase {
 	return &UserSessionUseCase{repo, refreshTokenLength, sessionDuration}
 }
 
@@ -25,7 +25,7 @@ func (uc UserSessionUseCase) Add(ctx context.Context, userId uuid.UUID, refreshT
 
 	e, err := uc.repo.Create(ctx, entity.UserSession{
 		Id:           uuid.New(),
-		UserdId:      userId,
+		UserId:       userId,
 		ExpiresAt:    now.Add(uc.sessionDuration),
 		UpdateAt:     now,
 		CreatedAt:    now,
@@ -42,7 +42,7 @@ func (uc UserSessionUseCase) Refresh(ctx context.Context, sessionId, userId uuid
 	now := time.Now()
 
 	e, err := uc.repo.Update(ctx, sessionId, entity.UserSession{
-		UserdId:      userId,
+		UserId:       userId,
 		ExpiresAt:    now.Add(uc.sessionDuration),
 		UpdateAt:     now,
 		RefreshToken: refreshToken,
