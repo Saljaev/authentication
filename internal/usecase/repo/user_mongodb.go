@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type UsersRepo struct {
@@ -21,15 +20,9 @@ func NewUsersRepo(db mongo.Client) UsersRepo {
 var _ usecase.UsersRepo = (*UsersRepo)(nil)
 
 func (r UsersRepo) Create(ctx context.Context, user entity.User) (*entity.User, error) {
-	client, err := mongo.NewClient(options.Client().ApplyURI(""))
-	if err != nil {
-		return nil, fmt.Errorf("MongoDBUserStore - Create - Connect: %w", err)
-	}
-	defer client.Disconnect(ctx)
+	collection := r.db.Database("user").Collection("user")
 
-	collection := client.Database("users").Collection("user")
-
-	_, err = collection.InsertOne(ctx, user)
+	_, err := collection.InsertOne(ctx, user)
 	if err != nil {
 		return nil, fmt.Errorf("MongoDBUserStore - Connect - Insert: %w", err)
 	}
@@ -38,13 +31,7 @@ func (r UsersRepo) Create(ctx context.Context, user entity.User) (*entity.User, 
 }
 
 func (r UsersRepo) Update(ctx context.Context, u entity.User, email string) (*entity.User, error) {
-	client, err := mongo.NewClient(options.Client().ApplyURI(""))
-	if err != nil {
-		return nil, fmt.Errorf("MongoDBUserStore - Update - Connect: %w", err)
-	}
-	defer client.Disconnect(ctx)
-
-	collection := client.Database("users").Collection("user")
+	collection := r.db.Database("user").Collection("user")
 
 	filter := bson.D{{"email", email}}
 
@@ -52,7 +39,7 @@ func (r UsersRepo) Update(ctx context.Context, u entity.User, email string) (*en
 		{"$set", u},
 	}
 
-	_, err = collection.UpdateOne(ctx, filter, update)
+	_, err := collection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return nil, fmt.Errorf("MongoDBUserStore - Update - UpdateOne: %w", err)
 	}
@@ -61,18 +48,12 @@ func (r UsersRepo) Update(ctx context.Context, u entity.User, email string) (*en
 }
 
 func (r UsersRepo) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
-	client, err := mongo.NewClient(options.Client().ApplyURI(""))
-	if err != nil {
-		return nil, fmt.Errorf("MongoDBUserStore - GetByEmail - Connect: %w", err)
-	}
-	defer client.Disconnect(ctx)
-
-	collection := client.Database("users").Collection("user")
+	collection := r.db.Database("user").Collection("user")
 
 	filter := bson.D{{"email", email}}
 
 	user := entity.User{}
-	err = collection.FindOne(ctx, filter).Decode(&user)
+	err := collection.FindOne(ctx, filter).Decode(&user)
 	if err != nil {
 		return nil, fmt.Errorf("MongoDBUserStore - GetByEmail - FindOne: %w", err)
 	}
