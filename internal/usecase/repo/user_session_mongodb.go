@@ -34,7 +34,7 @@ func (r UserSessionsRepo) Create(ctx context.Context, us entity.UserSession) (*e
 func (r UserSessionsRepo) Get(ctx context.Context, userId uuid.UUID) (*entity.UserSession, error) {
 	collection := r.db.Database("user_session").Collection("user_session")
 
-	filter := bson.D{{"user_id", userId}}
+	filter := bson.D{{"userid", userId}}
 
 	userSession := entity.UserSession{}
 	err := collection.FindOne(ctx, filter).Decode(&userSession)
@@ -48,7 +48,7 @@ func (r UserSessionsRepo) Get(ctx context.Context, userId uuid.UUID) (*entity.Us
 func (r UserSessionsRepo) Update(ctx context.Context, sessionId uuid.UUID, newUserSession entity.UserSession) (*entity.UserSession, error) {
 	collection := r.db.Database("user_session").Collection("user_session")
 
-	filter := bson.D{{"id", sessionId}, {"user_id", newUserSession.UserdId}}
+	filter := bson.D{{"id", sessionId}, {"userid", newUserSession.UserId}}
 
 	update := bson.D{
 		{"$set", newUserSession},
