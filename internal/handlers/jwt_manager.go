@@ -6,6 +6,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -61,8 +63,12 @@ func (m *JWTManager) Parse(accessToken string) (*UseClaims, error) {
 }
 
 func (m *JWTManager) NewRefreshToken() (string, error) {
-	token := make([]byte, 32)
-	_, err := rand.Read(token)
+	tokenLength, err := strconv.ParseInt(os.Getenv("token_length"), 10, 64)
+	if err != nil {
+		return "", fmt.Errorf("Error to convert token length to int: %w", err)
+	}
+	token := make([]byte, tokenLength)
+	_, err = rand.Read(token)
 	if err != nil {
 		return "", fmt.Errorf("JWTManager - NewRefreshToken - Generate")
 	}
