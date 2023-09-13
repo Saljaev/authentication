@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"net/http"
 	"time"
 )
@@ -17,12 +16,26 @@ type UserHandler struct {
 	jwt     JWTManager
 }
 
+type userJSON struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 func NewUserHandler(u usecase.Users, us usecase.UserSessions, jwt JWTManager) *UserHandler {
 	return &UserHandler{u, us, jwt}
 }
 
 func (h *UserHandler) Register(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	user, err := entity.NewUser(r.FormValue("email"), r.FormValue("password"))
+	decoder := json.NewDecoder(r.Body)
+
+	var u userJSON
+
+	err := decoder.Decode(&u)
+	if err != nil {
+		return err
+	}
+
+	user, err := entity.NewUser(u.Email, u.Password)
 	if err != nil {
 		return err
 	}
@@ -32,24 +45,28 @@ func (h *UserHandler) Register(ctx context.Context, w http.ResponseWriter, r *ht
 		return err
 	}
 
-	jsonResp, err := json.Marshal(storeUser)
-	if err != nil {
-		return err
-	}
-
 	w.WriteHeader(http.StatusOK)
-	w.Write(jsonResp)
+	w.Write([]byte(storeUser.Email))
 
 	return nil
 }
 
 func (h *UserHandler) Login(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	user, err := h.users.GetByEmail(ctx, r.FormValue("email"))
+	decoder := json.NewDecoder(r.Body)
+
+	var u userJSON
+
+	err := decoder.Decode(&u)
+	if err != nil {
+		fmt.Errorf("Error to decode JSON: %w", err)
+	}
+
+	user, err := h.users.GetByEmail(ctx, u.Email)
 	if err != nil {
 		return err
 	}
 
-	if !user.IsPasswordCorrect(r.FormValue("password")) {
+	if !user.IsPasswordCorrect(u.Password) {
 		return err
 	}
 
@@ -63,7 +80,6 @@ func (h *UserHandler) Login(ctx context.Context, w http.ResponseWriter, r *http.
 		return err
 	}
 
-	// TODO: set session time limit 7 day
 	session, err := h.session.Add(ctx, user.Id, refreshToken)
 	if err != nil {
 		return err
@@ -83,14 +99,24 @@ func (h *UserHandler) Login(ctx context.Context, w http.ResponseWriter, r *http.
 	})
 
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Successfull login"))
 
 	return nil
 }
 
 func (h *UserHandler) RefreshToken(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	user, err := h.users.GetByEmail(ctx, r.FormValue("email"))
+	decoder := json.NewDecoder(r.Body)
+
+	var u userJSON
+
+	err := decoder.Decode(&u)
 	if err != nil {
-		return nil
+		return fmt.Errorf("Error to decode JSON: %w", err)
+	}
+
+	user, err := h.users.GetByEmail(ctx, u.Email)
+	if err != nil {
+		return fmt.Errorf("Error to get user: %w", err)
 	}
 
 	refreshFromCookie, err := r.Cookie("RefreshToken")
@@ -100,11 +126,11 @@ func (h *UserHandler) RefreshToken(ctx context.Context, w http.ResponseWriter, r
 
 	session, err := h.session.Get(ctx, user.Id)
 	if err != nil {
-		return nil
+		fmt.Errorf("Error get user session: %w", err)
 	}
 
 	if session.RefreshToken != refreshFromCookie.Value {
-		return fmt.Errorf("Can't compare refresh token with token in session")
+		return fmt.Errorf("Can't compare refresh token with token in session: %w", http.StatusUnprocessableEntity)
 	}
 
 	refreshToken, err := h.jwt.NewRefreshToken()
@@ -112,8 +138,7 @@ func (h *UserHandler) RefreshToken(ctx context.Context, w http.ResponseWriter, r
 		return err
 	}
 
-	// TODO: change session repo
-	_, err = h.session.Refresh(ctx, uuid.MustParse(r.FormValue("refresh_token")), user.Id, refreshToken)
+	_, err = h.session.Refresh(ctx, session.Id, user.Id, refreshToken)
 	if err != nil {
 		return err
 	}
@@ -137,7 +162,7 @@ func (h *UserHandler) RefreshToken(ctx context.Context, w http.ResponseWriter, r
 	})
 
 	w.WriteHeader(http.StatusOK)
-
+	w.Write([]byte("Coockies refresh"))
 	return nil
 }
 
@@ -151,7 +176,7 @@ func (h *UserHandler) Validate(ctx context.Context, w http.ResponseWriter, r *ht
 	if err != nil {
 		return err
 	}
-	
+
 	if claims == nil || claims.Email == "" {
 		return err
 	}
