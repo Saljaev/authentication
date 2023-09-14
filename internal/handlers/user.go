@@ -32,17 +32,17 @@ func (h *UserHandler) Register(ctx context.Context, w http.ResponseWriter, r *ht
 
 	err := decoder.Decode(&u)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error: %w", err)
 	}
 
 	user, err := entity.NewUser(u.Email, u.Password)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error: %w", err)
 	}
 
 	storeUser, err := h.users.Create(ctx, *user)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error: %w", err)
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -58,31 +58,31 @@ func (h *UserHandler) Login(ctx context.Context, w http.ResponseWriter, r *http.
 
 	err := decoder.Decode(&u)
 	if err != nil {
-		fmt.Errorf("Error to decode JSON: %w", err)
+		return fmt.Errorf("Error to decode JSON: %w", err)
 	}
 
 	user, err := h.users.GetByEmail(ctx, u.Email)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error: %w", err)
 	}
 
 	if !user.IsPasswordCorrect(u.Password) {
-		return err
+		return fmt.Errorf("Error to compare password")
 	}
 
 	accessToken, err := h.jwt.Generate(user)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error: %w", err)
 	}
 
 	refreshToken, err := h.jwt.NewRefreshToken()
 	if err != nil {
-		return err
+		return fmt.Errorf("Error: %w", err)
 	}
 
 	session, err := h.session.Add(ctx, user.Id, refreshToken)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error: %w", err)
 	}
 
 	http.SetCookie(w, &http.Cookie{
@@ -130,22 +130,22 @@ func (h *UserHandler) RefreshToken(ctx context.Context, w http.ResponseWriter, r
 	}
 
 	if session.RefreshToken != refreshFromCookie.Value {
-		return fmt.Errorf("Can't compare refresh token with token in session: %w", http.StatusUnprocessableEntity)
+		return fmt.Errorf("Can't compare refresh token with token in session")
 	}
 
 	refreshToken, err := h.jwt.NewRefreshToken()
 	if err != nil {
-		return err
+		return fmt.Errorf("Error: %w", err)
 	}
 
 	_, err = h.session.Refresh(ctx, session.Id, user.Id, refreshToken)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error: %w", err)
 	}
 
 	accessToken, err := h.jwt.Generate(user)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error: %w", err)
 	}
 
 	http.SetCookie(w, &http.Cookie{
@@ -174,16 +174,16 @@ func (h *UserHandler) Validate(ctx context.Context, w http.ResponseWriter, r *ht
 
 	claims, err := h.jwt.Parse(token.Value)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error: %w", err)
 	}
 
 	if claims == nil || claims.Email == "" {
-		return err
+		return fmt.Errorf("Error: %w", err)
 	}
 
 	user, err := h.users.GetByEmail(ctx, claims.Email)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error: %w", err)
 	}
 
 	w.WriteHeader(http.StatusOK)
